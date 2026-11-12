@@ -384,7 +384,6 @@ function setupGoogleSheetModal() {
   const demoBtn = document.getElementById("loadDemoBtn");
   const input = document.getElementById("sheetUrlInput");
 
-  // Check if user previously saved a sheet URL
   const savedUrl = localStorage.getItem("rfid_google_sheet_csv");
   if (savedUrl) {
     input.value = savedUrl;
@@ -410,50 +409,86 @@ function setupGoogleSheetModal() {
 
 async function fetchGoogleSheetData(csvUrl) {
   try {
-    const response = await fetch(csvUrl);
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(csvUrl)}`;
+    const response = await fetch(proxyUrl);
     const csvText = await response.text();
-    const rows = csvText.split("\n").map((row) => row.split(",").map((cell) => cell.trim()));
+    
+    const rows = csvText
+      .split("\n")
+      .map((row) => row.split(",").map((cell) => cell.trim().replace(/^"|"$/g, "")));
 
-    // Skip header row (index 0) and parse student rows
-    const parsedStudents = rows
-      .slice(1)
-      .filter((r) => r.length >= 6 && r[0] !== "")
-      .map((r, index) => ({
-        id: `SHEET_${index + 1}`,
-        name: r[0] || "Student",
-        rfid: r[1] || "00-00-00-00",
-        className: r[2] || "Class XII",
-        roll: r[3] || `${index + 1}`,
-        totalDays: parseInt(r[4], 10) || 100,
-        presentDays: parseInt(r[5], 10) || 0,
-        lateDays: 0,
-        todayTime: r[6] || "08:15 AM",
-        todayStatus: r[7] || "Present",
-        results: studentsData[0].results,
-        funds: studentsData[0].funds,
-        logs: [
-          {
-            date: "Google Sheet Sync",
-            time: r[6] || "08:15 AM",
-            gate: "RFID Cloud Sheet",
-            status: r[7] || "Present"
-          }
-        ]
-      }));
+    // Skip header row: RFID UID, Student Name, Date and Time
+    const rawLogs = rows.slice(1).filter((r) => r.length >= 3 && r[0] !== "");
 
-    if (parsedStudents.length > 0) {
-      studentsData = parsedStudents;
-      currentStudentIndex = 0;
-      populateStudentDropdown();
-      renderAll();
-
-      document.getElementById("syncDot").classList.add("connected");
-      document.getElementById("syncStatusText").textContent = "Google Sheet Synced";
-      showToast(`Connected! Loaded ${parsedStudents.length} student records from Google Sheets.`);
+    if (rawLogs.length === 0) {
+      showToast("Sheet is empty or CSV format is invalid.");
+      return;
     }
+
+    const studentMap = {};
+    const totalSchoolDays = 150;
+
+    rawLogs.forEach((row) => {
+      const rfid = row[0];
+      const name = row[1];
+      const dateTime = row[2];
+      const parts = dateTime ? dateTime.split(" ") : ["Recent", "00:00:00"];
+      const datePart = parts[0];
+      const timePart = parts[1] || "";
+
+      if (!studentMap[rfid]) {
+        studentMap[rfid] = {
+          id: `STU_${rfid}`,
+          name: name || "Unknown Student",
+          rfid: rfid,
+          className: "Class XII - Science",
+          roll: `${Object.keys(studentMap).length + 1}`,
+          totalDays: totalSchoolDays,
+          uniqueDates: new Set(),
+          lateDays: 0,
+          todayTime: timePart,
+          todayStatus: "Present",
+          results: [
+            { subject: "Physics", marks: 91, max: 100, grade: "A1" },
+            { subject: "Mathematics", marks: 94, max: 100, grade: "A1" },
+            { subject: "Chemistry", marks: 85, max: 100, grade: "A2" },
+            { subject: "Computer Science", marks: 96, max: 100, grade: "A1" }
+          ],
+          funds: [
+            { category: "Annual Lab & Tuition Fee", total: "₹18,000", paid: "₹18,000", due: "₹0", status: "Paid" }
+          ],
+          logs: []
+        };
+      }
+
+      if (datePart) {
+        studentMap[rfid].uniqueDates.add(datePart);
+      }
+
+      studentMap[rfid].logs.unshift({
+        date: datePart,
+        time: timePart,
+        gate: "Main Gate RFID #01",
+        status: "Present"
+      });
+      studentMap[rfid].todayTime = timePart;
+    });
+
+    studentsData = Object.values(studentMap).map((stu) => ({
+      ...stu,
+      presentDays: Math.max(1, stu.uniqueDates.size)
+    }));
+
+    currentStudentIndex = 0;
+    populateStudentDropdown();
+    renderAll();
+
+    document.getElementById("syncDot").classList.add("connected");
+    document.getElementById("syncStatusText").textContent = "Google Sheet Synced";
+    showToast(`Successfully loaded ${studentsData.length} students from sheet!`);
   } catch (err) {
     console.error("Sheet fetch error:", err);
-    showToast("Could not read Sheet. Ensure it is Published to Web as CSV.");
+    showToast("Sync failed. Check console or CSV link.");
   }
 }
 
