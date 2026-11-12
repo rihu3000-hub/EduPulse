@@ -90,9 +90,6 @@ const announcementsData = [
 
 let currentStudentIndex = 0;
 
-// ==========================================
-// 2. INITIALIZATION & NAVIGATION
-// ==========================================
 document.addEventListener("DOMContentLoaded", () => {
   populateStudentDropdown();
   renderAll();
@@ -136,9 +133,6 @@ function setupNavigation() {
   });
 }
 
-// ==========================================
-// 3. RENDER STUDENT DATA ACROSS TABS
-// ==========================================
 function renderAll() {
   const s = studentsData[currentStudentIndex];
   const percentage = Math.round((s.presentDays / s.totalDays) * 100);
@@ -365,13 +359,13 @@ function setupGoogleSheetModal() {
 
 async function fetchGoogleSheetData(csvUrl) {
   try {
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(csvUrl)}`;
+    // Using a robust proxy (CodeTabs) to avoid CORS blocks on GitHub Pages
+    const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(csvUrl)}`;
     const response = await fetch(proxyUrl);
     const csvText = await response.text();
 
-    // Guard against Google returning HTML login/viewer pages instead of CSV
     if (csvText.trim().startsWith("<!DOCTYPE html>") || csvText.includes("<html")) {
-      showToast("Error: Link returned an HTML page. Ensure sheet is published as CSV.");
+      showToast("Error: Link returned HTML. Check sheet publishing.");
       return;
     }
 
