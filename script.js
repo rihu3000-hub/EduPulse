@@ -31,35 +31,6 @@ let studentsData = [
       { date: "11 Nov 2026", time: "08:36 AM", gate: "Science Block #02", status: "Late" },
       { date: "10 Nov 2026", time: "08:11 AM", gate: "Main Gate Reader #01", status: "Present" }
     ]
-  },
-  {
-    id: "STU02",
-    name: "Meera Krishnan",
-    rfid: "B7-41-89-2C",
-    className: "Class XII - Science",
-    roll: "22",
-    totalDays: 150,
-    presentDays: 144,
-    lateDays: 1,
-    todayTime: "08:09 AM",
-    todayStatus: "Present",
-    results: [
-      { subject: "Physics", marks: 89, max: 100, grade: "A2" },
-      { subject: "Mathematics", marks: 92, max: 100, grade: "A1" },
-      { subject: "Chemistry", marks: 94, max: 100, grade: "A1" },
-      { subject: "Computer Science (Python)", marks: 95, max: 100, grade: "A1" },
-      { subject: "English Core", marks: 90, max: 100, grade: "A1" }
-    ],
-    funds: [
-      { category: "Annual Tuition & Lab Fee", total: "₹18,000", paid: "₹18,000", due: "₹0", status: "Paid" },
-      { category: "IT & Robotics Exhibition Fund", total: "₹1,500", paid: "₹1,000", due: "₹500", status: "Pending" },
-      { category: "PTA & Student Welfare Fund", total: "₹1,000", paid: "₹1,000", due: "₹0", status: "Paid" }
-    ],
-    logs: [
-      { date: "Today", time: "08:09 AM", gate: "Main Gate Reader #01", status: "Present" },
-      { date: "Yesterday", time: "08:12 AM", gate: "Main Gate Reader #01", status: "Present" },
-      { date: "11 Nov 2026", time: "08:15 AM", gate: "Main Gate Reader #01", status: "Present" }
-    ]
   }
 ];
 
@@ -173,18 +144,15 @@ function renderAll() {
   const percentage = Math.round((s.presentDays / s.totalDays) * 100);
   const absentDays = Math.max(0, s.totalDays - s.presentDays);
 
-  // Welcome Banner
   document.getElementById("studentRfidTag").textContent = `RFID UID: #${s.rfid}`;
   document.getElementById("welcomeName").textContent = `Welcome back, ${s.name}`;
   document.getElementById("studentMeta").textContent = `${s.className} • Roll No: ${s.roll}`;
   document.getElementById("todayStatusBadge").innerHTML = `<i class="fa-solid fa-check-circle"></i> ${s.todayStatus} Today (${s.todayTime})`;
 
-  // Dashboard KPIs
   document.getElementById("dashPercent").textContent = `${percentage}%`;
   document.getElementById("dashPresent").textContent = s.presentDays;
   document.getElementById("dashTotal").textContent = s.totalDays;
 
-  // Progress Ring Math
   const circle = document.getElementById("attendanceCircle");
   const radius = circle.r.baseVal.value;
   const circumference = radius * 2 * Math.PI;
@@ -192,11 +160,9 @@ function renderAll() {
   const offset = circumference - (percentage / 100) * circumference;
   circle.style.strokeDashoffset = offset;
 
-  // Average Exam Score
   const avgMarks = (s.results.reduce((sum, r) => sum + r.marks, 0) / s.results.length).toFixed(1);
   document.getElementById("dashGrade").textContent = `${avgMarks}%`;
 
-  // Funds Summary
   const pendingFund = s.funds.find((f) => f.status !== "Paid");
   if (pendingFund) {
     document.getElementById("dashFunds").textContent = pendingFund.due;
@@ -208,7 +174,6 @@ function renderAll() {
     document.getElementById("dashFundSub").className = "stat-sub good";
   }
 
-  // Recent Logs on Dashboard
   const recentLogsList = document.getElementById("recentLogsList");
   recentLogsList.innerHTML = s.logs
     .slice(0, 4)
@@ -227,7 +192,6 @@ function renderAll() {
     )
     .join("");
 
-  // Attendance Tab
   document.getElementById("attTabPresent").textContent = s.presentDays;
   document.getElementById("attTabAbsent").textContent = absentDays;
   document.getElementById("attTabLate").textContent = s.lateDays;
@@ -248,7 +212,6 @@ function renderAll() {
     )
     .join("");
 
-  // Results Tab
   const resultsGrid = document.getElementById("resultsGrid");
   resultsGrid.innerHTML = s.results
     .map(
@@ -269,7 +232,6 @@ function renderAll() {
     )
     .join("");
 
-  // Funds Tab
   const fundsBody = document.getElementById("fundsTableBody");
   fundsBody.innerHTML = s.funds
     .map(
@@ -340,9 +302,6 @@ function renderAnnouncements() {
     .join("");
 }
 
-// ==========================================
-// 4. SIMULATE RFID CARD TAP (FOR PRESENTATION)
-// ==========================================
 function setupRfidSimulator() {
   const simBtn = document.getElementById("simulateScanBtn");
   simBtn.addEventListener("click", () => {
@@ -373,9 +332,6 @@ function showToast(message) {
   setTimeout(() => toast.classList.remove("show"), 3500);
 }
 
-// ==========================================
-// 5. CONNECT TO GOOGLE SHEET (CSV FETCH)
-// ==========================================
 function setupGoogleSheetModal() {
   const modal = document.getElementById("sheetModal");
   const openBtn = document.getElementById("openSheetModalBtn");
@@ -395,7 +351,7 @@ function setupGoogleSheetModal() {
 
   saveBtn.onclick = () => {
     const url = input.value.trim();
-    if (!url) return alert("Please paste a valid Published Google Sheet CSV link.");
+    if (!url) return alert("Please paste a valid CSV link.");
     localStorage.setItem("rfid_google_sheet_csv", url);
     fetchGoogleSheetData(url);
     modal.classList.remove("open");
@@ -412,16 +368,21 @@ async function fetchGoogleSheetData(csvUrl) {
     const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(csvUrl)}`;
     const response = await fetch(proxyUrl);
     const csvText = await response.text();
-    
+
+    // Guard against Google returning HTML login/viewer pages instead of CSV
+    if (csvText.trim().startsWith("<!DOCTYPE html>") || csvText.includes("<html")) {
+      showToast("Error: Link returned an HTML page. Ensure sheet is published as CSV.");
+      return;
+    }
+
     const rows = csvText
       .split("\n")
       .map((row) => row.split(",").map((cell) => cell.trim().replace(/^"|"$/g, "")));
 
-    // Skip header row: RFID UID, Student Name, Date and Time
     const rawLogs = rows.slice(1).filter((r) => r.length >= 3 && r[0] !== "");
 
     if (rawLogs.length === 0) {
-      showToast("Sheet is empty or CSV format is invalid.");
+      showToast("Sheet is empty or format is invalid.");
       return;
     }
 
