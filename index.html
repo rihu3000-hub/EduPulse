@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EduPulse | Smart RFID School Connect</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Background Glow Orbs -->
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon"><i class="fa-solid fa-wifi"></i></div>
+        <div>
+          <h2>EduPulse</h2>
+          <span>RFID Smart Connect</span>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <button class="nav-btn active" data-tab="dashboard">
+          <i class="fa-solid fa-grid-2"></i>
+          <span>Dashboard</span>
+        </button>
+        <button class="nav-btn" data-tab="attendance">
+          <i class="fa-solid fa-id-card-clip"></i>
+          <span>RFID Attendance</span>
+        </button>
+        <button class="nav-btn" data-tab="results">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>Exam Results</span>
+        </button>
+        <button class="nav-btn" data-tab="timetable">
+          <i class="fa-solid fa-calendar-week"></i>
+          <span>Time Table</span>
+        </button>
+        <button class="nav-btn" data-tab="announcements">
+          <i class="fa-solid fa-bullhorn"></i>
+          <span>Announcements</span>
+        </button>
+        <button class="nav-btn" data-tab="funds">
+          <i class="fa-solid fa-wallet"></i>
+          <span>School Funds</span>
+        </button>
+      </nav>
+
+      <div class="sheet-status-card">
+        <div class="status-header">
+          <span class="pulse-dot" id="syncDot"></span>
+          <span id="syncStatusText">Demo Mode Active</span>
+        </div>
+        <p class="status-desc">Connect your Google Sheet CSV link to fetch live RFID logs.</p>
+        <button class="btn-connect" id="openSheetModalBtn">
+          <i class="fa-solid fa-table"></i> Connect Google Sheet
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Header -->
+      <header class="topbar">
+        <div class="student-selector">
+          <label for="studentSelect"><i class="fa-solid fa-user-graduate"></i> Active Student:</label>
+          <select id="studentSelect"></select>
+        </div>
+
+        <div class="topbar-actions">
+          <button class="btn-rfid-sim" id="simulateScanBtn" title="Simulate an RFID Card Tap">
+            <i class="fa-solid fa-rss"></i> Simulate RFID Scan
+          </button>
+          <div class="clock-badge" id="liveClock">00:00:00</div>
+        </div>
+      </header>
+
+      <!-- Toast Notification for RFID Tap -->
+      <div class="rfid-toast" id="rfidToast">
+        <i class="fa-solid fa-circle-check"></i>
+        <div id="rfidToastMsg">RFID Card Scanned!</div>
+      </div>
+
+      <!-- TAB 1: DASHBOARD -->
+      <section class="tab-section active" id="dashboard">
+        <div class="welcome-banner">
+          <div>
+            <span class="badge-tag" id="studentRfidTag">RFID UID: #A4-92-11-08</span>
+            <h1 id="welcomeName">Welcome back, Arjun Nair</h1>
+            <p id="studentMeta">Class XII - Science (Batch A) • Roll No: 14</p>
+          </div>
+          <div class="today-status" id="todayStatusBadge">
+            <i class="fa-solid fa-check-circle"></i> Present Today (08:14 AM)
+          </div>
+        </div>
+
+        <!-- KPI Stats Grid -->
+        <div class="stats-grid">
+          <div class="glass-card stat-card">
+            <div class="stat-info">
+              <span class="stat-label">Attendance Rate</span>
+              <h2 class="stat-value" id="dashPercent">92%</h2>
+              <span class="stat-sub good"><i class="fa-solid fa-arrow-trend-up"></i> Above 75% Requirement</span>
+            </div>
+            <div class="progress-ring-wrapper">
+              <svg class="progress-ring" width="84" height="84">
+                <circle class="progress-ring__bg" stroke-width="8" fill="transparent" r="34" cx="42" cy="42"/>
+                <circle class="progress-ring__circle" id="attendanceCircle" stroke-width="8" fill="transparent" r="34" cx="42" cy="42"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="glass-card stat-card">
+            <div class="stat-info">
+              <span class="stat-label">Days Attended</span>
+              <h2 class="stat-value"><span id="dashPresent">138</span> <small>/ <span id="dashTotal">150</span></small></h2>
+              <span class="stat-sub">Total Working Days</span>
+            </div>
+            <div class="icon-box blue"><i class="fa-solid fa-calendar-check"></i></div>
+          </div>
+
+          <div class="glass-card stat-card">
+            <div class="stat-info">
+              <span class="stat-label">Latest Exam Avg</span>
+              <h2 class="stat-value" id="dashGrade">88.4%</h2>
+              <span class="stat-sub good">Term 1 Evaluation</span>
+            </div>
+            <div class="icon-box purple"><i class="fa-solid fa-award"></i></div>
+          </div>
+
+          <div class="glass-card stat-card">
+            <div class="stat-info">
+              <span class="stat-label">Fund Balance / Due</span>
+              <h2 class="stat-value" id="dashFunds">₹0 Due</h2>
+              <span class="stat-sub good" id="dashFundSub">All Term Fees Cleared</span>
+            </div>
+            <div class="icon-box green"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+          </div>
+        </div>
+
+        <!-- Two Column Overview -->
+        <div class="dashboard-split">
+          <div class="glass-card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-clock-rotate-left"></i> Recent RFID Gate Logs</h3>
+              <span class="live-pill">LIVE STREAM</span>
+            </div>
+            <div class="log-list" id="recentLogsList"></div>
+          </div>
+
+          <div class="glass-card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-bell"></i> Latest Notice Board</h3>
+            </div>
+            <div class="notice-mini-list" id="dashNoticeList"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: RFID ATTENDANCE -->
+      <section class="tab-section" id="attendance">
+        <div class="section-header">
+          <h2>RFID Smart Attendance Analytics</h2>
+          <p>Real-time punch-in records synced from campus RFID readers to Google Sheets.</p>
+        </div>
+
+        <div class="attendance-summary-bar glass-card">
+          <div>
+            <span>Present Days</span>
+            <h3 id="attTabPresent" class="text-green">138</h3>
+          </div>
+          <div>
+            <span>Absent Days</span>
+            <h3 id="attTabAbsent" class="text-red">12</h3>
+          </div>
+          <div>
+            <span>Late Entries (After 8:30 AM)</span>
+            <h3 id="attTabLate" class="text-amber">3</h3>
+          </div>
+          <div>
+            <span>Attendance Percentage</span>
+            <h3 id="attTabPercent" class="text-blue">92.0%</h3>
+          </div>
+        </div>
+
+        <div class="glass-card table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>RFID Card UID</th>
+                <th>Check-In Time</th>
+                <th>Gate / Reader</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="attendanceTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 3: EXAM RESULTS -->
+      <section class="tab-section" id="results">
+        <div class="section-header">
+          <h2>Academic Performance & Results</h2>
+          <p>Subject-wise marks breakdown and grade analysis.</p>
+        </div>
+        <div class="results-grid" id="resultsGrid"></div>
+      </section>
+
+      <!-- TAB 4: TIME TABLE -->
+      <section class="tab-section" id="timetable">
+        <div class="section-header">
+          <h2>Weekly Class Time Table</h2>
+          <p>Interactive daily schedule for Class XII Science.</p>
+        </div>
+        <div class="day-pills" id="dayPills">
+          <button class="day-pill active" data-day="Monday">Monday</button>
+          <button class="day-pill" data-day="Tuesday">Tuesday</button>
+          <button class="day-pill" data-day="Wednesday">Wednesday</button>
+          <button class="day-pill" data-day="Thursday">Thursday</button>
+          <button class="day-pill" data-day="Friday">Friday</button>
+        </div>
+        <div class="timetable-cards" id="timetableContainer"></div>
+      </section>
+
+      <!-- TAB 5: ANNOUNCEMENTS -->
+      <section class="tab-section" id="announcements">
+        <div class="section-header">
+          <h2>Campus Announcements & Circulars</h2>
+          <p>Important updates from administration, IT department, and exam cell.</p>
+        </div>
+        <div class="announcements-list" id="fullAnnouncementsList"></div>
+      </section>
+
+      <!-- TAB 6: SCHOOL FUNDS -->
+      <section class="tab-section" id="funds">
+        <div class="section-header">
+          <h2>Student Funds, Fees & Welfare Contributions</h2>
+          <p>Transparent breakdown of academic fees, lab funds, and event contributions.</p>
+        </div>
+        <div class="glass-card table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Fund / Fee Category</th>
+                <th>Allocated / Total</th>
+                <th>Paid Amount</th>
+                <th>Balance Due</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="fundsTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Google Sheet Connection Modal -->
+  <div class="modal-overlay" id="sheetModal">
+    <div class="modal-box glass-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-file-csv"></i> Connect Google Sheet</h3>
+        <button class="close-modal" id="closeModalBtn">&times;</button>
+      </div>
+      <p class="modal-help">
+        In Google Sheets, go to <strong>File → Share → Publish to web</strong>, choose <strong>Comma-separated values (.csv)</strong>, and paste the link below.
+      </p>
+      <div class="expected-format">
+        <strong>Expected Columns:</strong> <code>Name, RFID, Class, Roll, TotalDays, PresentDays, LastScanTime, Status</code>
+      </div>
+      <input type="url" id="sheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv" />
+      <div class="modal-actions">
+        <button class="btn-secondary" id="loadDemoBtn">Reset to Demo Data</button>
+        <button class="btn-primary" id="saveSheetUrlBtn">Sync Live Data</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
