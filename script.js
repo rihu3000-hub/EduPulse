@@ -359,7 +359,7 @@ function setupGoogleSheetModal() {
 
 async function fetchGoogleSheetData(csvUrl) {
   try {
-    // Using a robust proxy (CodeTabs) to avoid CORS blocks on GitHub Pages
+    // Using CodeTabs stable CORS proxy for GitHub Pages
     const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(csvUrl)}`;
     const response = await fetch(proxyUrl);
     const csvText = await response.text();
